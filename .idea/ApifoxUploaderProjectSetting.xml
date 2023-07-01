@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ApifoxUploaderProjectSetting">
+    <option name="apifoxAccessToken" value="APS-Keqi4vT0fkB0VsokiDuvghiowAu0Bn3p" />
+    <option name="apifoxApiOverwriteMode" value="覆盖所有字段" />
+    <option name="apifoxProjectIds">
+      <array>
+        <option value="# ModuleName:ProjectID" />
+        <option value="SYOA:2794319" />
+        <option value="reggie_take_out:2951204" />
+        <option value="doctor:2951781" />
+      </array>
+    </option>
+    <option name="yapiTokens" value="" />
+  </component>
+</project>
