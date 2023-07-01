@@ -12,6 +12,7 @@ import com.lrt.doctor.entity.User;
 import com.lrt.doctor.service.DeparService;
 import com.lrt.doctor.service.UserService;
 import com.lrt.doctor.utils.JWTUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.DigestUtils;
@@ -138,6 +139,57 @@ public class UserController {
         return R.success(fileUuid);
     }
 
+    /**
+     * 修改个人信息
+     * @param userDTO
+     * @return
+     */
+    @PutMapping
+    public R<String> update(@RequestBody UserDTO userDTO) {
+        // 根据科室的名字查找科室id,绑定到userDTO
+        String deparName = userDTO.getDeparName();
+        LambdaQueryWrapper<Depar> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Depar::getName, deparName);
+        Depar depar = deparService.getOne(queryWrapper);
+        userDTO.setDeparId(depar.getId());
+        User user = new User();
+        BeanUtils.copyProperties(userDTO, user);
+        // 保存到数据库
+        userService.updateById(user);
+        return R.success("个人信息修改成功");
+    }
 
+    /**
+     * 新增医生
+     * @param userDTO
+     * @return
+     */
+    @PostMapping
+    public R<String> save(@RequestBody UserDTO userDTO) {
+        // 判断传入的用户名和密码是否为空
+        if (StrUtil.isBlank(userDTO.getUsername()) || StrUtil.isBlank(userDTO.getPassword())) {
+            return R.error("用户名或密码为空");
+        }
+        // 判断用户名是否已经存在
+        LambdaQueryWrapper<User> userLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        userLambdaQueryWrapper.eq(User::getUsername, userDTO.getUsername());
+        if (userService.getOne(userLambdaQueryWrapper) != null) {
+            return R.error("用户名已存在");
+        }
+        // 将密码进行md5加密
+        userDTO.setPassword(DigestUtils.md5DigestAsHex(userDTO.getPassword().getBytes()));
+        // 根据科室的名字查找科室id,绑定到userDTO
+        LambdaQueryWrapper<Depar> deparLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        deparLambdaQueryWrapper.eq(Depar::getName, userDTO.getDeparName());
+        Depar depar = deparService.getOne(deparLambdaQueryWrapper);
+        userDTO.setDeparId(depar.getId());
+        User user = new User();
+        BeanUtils.copyProperties(userDTO, user);
+        // 设置权限为医生
+        user.setAuth(1);
+        // 保存到数据库
+        userService.save(user);
+        return R.success("新增医生成功");
+    }
 
 }
