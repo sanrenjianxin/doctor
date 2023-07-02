@@ -14,7 +14,7 @@ public class Room {
 
     private String intro;
 
-    private Long depar_id;
+    private Long deparId;
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;

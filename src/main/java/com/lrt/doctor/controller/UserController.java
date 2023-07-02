@@ -5,11 +5,14 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.lrt.doctor.common.R;
 import com.lrt.doctor.dto.UserDTO;
 import com.lrt.doctor.entity.Depar;
 import com.lrt.doctor.entity.User;
+import com.lrt.doctor.entity.UserRoom;
 import com.lrt.doctor.service.DeparService;
+import com.lrt.doctor.service.UserRoomService;
 import com.lrt.doctor.service.UserService;
 import com.lrt.doctor.utils.JWTUtils;
 import org.springframework.beans.BeanUtils;
@@ -35,6 +38,9 @@ public class UserController {
 
     @Autowired
     private DeparService deparService;
+
+    @Autowired
+    private UserRoomService userRoomService;
 
     /**
      * 登录
@@ -92,12 +98,12 @@ public class UserController {
     }
 
     /**
-     * 获取用户信息接口
+     * 根据id获取用户信息接口
      * @param id
      * @return
      */
-    @GetMapping
-    public R<UserDTO> getUserInfo(@RequestParam Long id) {
+    @GetMapping("#{id}")
+    public R<UserDTO> getUserInfo(@PathVariable Long id) {
         User user = userService.getById(id);
         UserDTO userDTO = new UserDTO();
         if (user == null) {
@@ -190,6 +196,52 @@ public class UserController {
         // 保存到数据库
         userService.save(user);
         return R.success("新增医生成功");
+    }
+
+    /**
+     * 医生信息分页查询
+     *
+     * @param page
+     * @param pageSize
+     * @param name
+     * @return
+     */
+    @GetMapping("/page")
+    public R<Page> page(int page, int pageSize, String name) {
+        // 构造分页构造器
+        Page page1 = new Page(page, pageSize);
+        // 构造条件构造器
+        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+        // 按姓名过滤，降序排列
+        queryWrapper.like(!StrUtil.isBlank(name), User::getName, name);
+        queryWrapper.orderByDesc(User::getUpdateTime);
+        // 执行查询
+        userService.page(page1, queryWrapper);
+        return R.success(page1);
+    }
+
+    /**
+     * 根据id删除医生信息
+     * @param id
+     * @return
+     */
+    @DeleteMapping("{id}")
+    public R<String> delete(@PathVariable Long id) {
+        // 根据id查找医生所有出诊记录
+        LambdaQueryWrapper<UserRoom> userRoomLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        userRoomLambdaQueryWrapper.eq(UserRoom::getUserId, id);
+        // 如果还有出诊记录则报告
+        if (userRoomService.getOne(userRoomLambdaQueryWrapper) != null) {
+            return R.error("当前医生还有出诊，无法删除");
+        }
+        // 根据id查找用户信息，如果是管理员用户则不能删除
+        User user = userService.getById(id);
+        if (user.getAuth() == 0) {
+            return R.error("无法删除管理员用户");
+        }
+        // 删除医生
+        userService.removeById(id);
+        return R.success("删除医生成功");
     }
 
 }

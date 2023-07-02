@@ -13,9 +13,9 @@ import java.time.LocalDateTime;
 public class UserRoom {
     private Long id;
 
-    private Long depar_id;
+    private Long roomId;
 
-    private Long user_id;
+    private Long userId;
 
     private LocalDateTime dateBegin;
 
